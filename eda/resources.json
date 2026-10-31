@@ -1,0 +1,552 @@
+[
+ {
+  "id": "R001",
+  "title": "Python Basics in 10 minutes",
+  "type": "video",
+  "topic": "Python Basics",
+  "level": "beginner",
+  "description": "A short visual recap of the core ideas of python basics with intuition before formulas.",
+  "minutes": 10,
+  "url": "https://learn.eda-academy.example/r/R001"
+ },
+ {
+  "id": "R002",
+  "title": "Python Basics: worked examples, step by step",
+  "type": "article",
+  "topic": "Python Basics",
+  "level": "beginner",
+  "description": "Five fully worked python basics problems with every step explained, common mistakes highlighted.",
+  "minutes": 25,
+  "url": "https://learn.eda-academy.example/r/R002"
+ },
+ {
+  "id": "R003",
+  "title": "Python Basics practice set (easy to medium)",
+  "type": "practice",
+  "topic": "Python Basics",
+  "level": "intermediate",
+  "description": "Graded practice problems on python basics that ramp difficulty slowly, with hints and solutions.",
+  "minutes": 40,
+  "url": "https://learn.eda-academy.example/r/R003"
+ },
+ {
+  "id": "R004",
+  "title": "Python Basics live doubt-clearing clinic recording",
+  "type": "video",
+  "topic": "Python Basics",
+  "level": "intermediate",
+  "description": "Mentor answers the most frequent learner questions and doubts about python basics.",
+  "minutes": 45,
+  "url": "https://learn.eda-academy.example/r/R004"
+ },
+ {
+  "id": "R005",
+  "title": "Control Flow in 10 minutes",
+  "type": "video",
+  "topic": "Control Flow",
+  "level": "beginner",
+  "description": "A short visual recap of the core ideas of control flow with intuition before formulas.",
+  "minutes": 10,
+  "url": "https://learn.eda-academy.example/r/R005"
+ },
+ {
+  "id": "R006",
+  "title": "Control Flow: worked examples, step by step",
+  "type": "article",
+  "topic": "Control Flow",
+  "level": "beginner",
+  "description": "Five fully worked control flow problems with every step explained, common mistakes highlighted.",
+  "minutes": 25,
+  "url": "https://learn.eda-academy.example/r/R006"
+ },
+ {
+  "id": "R007",
+  "title": "Control Flow practice set (easy to medium)",
+  "type": "practice",
+  "topic": "Control Flow",
+  "level": "intermediate",
+  "description": "Graded practice problems on control flow that ramp difficulty slowly, with hints and solutions.",
+  "minutes": 40,
+  "url": "https://learn.eda-academy.example/r/R007"
+ },
+ {
+  "id": "R008",
+  "title": "Control Flow live doubt-clearing clinic recording",
+  "type": "video",
+  "topic": "Control Flow",
+  "level": "intermediate",
+  "description": "Mentor answers the most frequent learner questions and doubts about control flow.",
+  "minutes": 45,
+  "url": "https://learn.eda-academy.example/r/R008"
+ },
+ {
+  "id": "R009",
+  "title": "Functions in 10 minutes",
+  "type": "video",
+  "topic": "Functions",
+  "level": "beginner",
+  "description": "A short visual recap of the core ideas of functions with intuition before formulas.",
+  "minutes": 10,
+  "url": "https://learn.eda-academy.example/r/R009"
+ },
+ {
+  "id": "R010",
+  "title": "Functions: worked examples, step by step",
+  "type": "article",
+  "topic": "Functions",
+  "level": "beginner",
+  "description": "Five fully worked functions problems with every step explained, common mistakes highlighted.",
+  "minutes": 25,
+  "url": "https://learn.eda-academy.example/r/R010"
+ },
+ {
+  "id": "R011",
+  "title": "Functions practice set (easy to medium)",
+  "type": "practice",
+  "topic": "Functions",
+  "level": "intermediate",
+  "description": "Graded practice problems on functions that ramp difficulty slowly, with hints and solutions.",
+  "minutes": 40,
+  "url": "https://learn.eda-academy.example/r/R011"
+ },
+ {
+  "id": "R012",
+  "title": "Functions live doubt-clearing clinic recording",
+  "type": "video",
+  "topic": "Functions",
+  "level": "intermediate",
+  "description": "Mentor answers the most frequent learner questions and doubts about functions.",
+  "minutes": 45,
+  "url": "https://learn.eda-academy.example/r/R012"
+ },
+ {
+  "id": "R013",
+  "title": "Recursion in 10 minutes",
+  "type": "video",
+  "topic": "Recursion",
+  "level": "beginner",
+  "description": "A short visual recap of the core ideas of recursion with intuition before formulas.",
+  "minutes": 10,
+  "url": "https://learn.eda-academy.example/r/R013"
+ },
+ {
+  "id": "R014",
+  "title": "Recursion: worked examples, step by step",
+  "type": "article",
+  "topic": "Recursion",
+  "level": "beginner",
+  "description": "Five fully worked recursion problems with every step explained, common mistakes highlighted.",
+  "minutes": 25,
+  "url": "https://learn.eda-academy.example/r/R014"
+ },
+ {
+  "id": "R015",
+  "title": "Recursion practice set (easy to medium)",
+  "type": "practice",
+  "topic": "Recursion",
+  "level": "intermediate",
+  "description": "Graded practice problems on recursion that ramp difficulty slowly, with hints and solutions.",
+  "minutes": 40,
+  "url": "https://learn.eda-academy.example/r/R015"
+ },
+ {
+  "id": "R016",
+  "title": "Recursion live doubt-clearing clinic recording",
+  "type": "video",
+  "topic": "Recursion",
+  "level": "intermediate",
+  "description": "Mentor answers the most frequent learner questions and doubts about recursion.",
+  "minutes": 45,
+  "url": "https://learn.eda-academy.example/r/R016"
+ },
+ {
+  "id": "R017",
+  "title": "Data Structures in 10 minutes",
+  "type": "video",
+  "topic": "Data Structures",
+  "level": "beginner",
+  "description": "A short visual recap of the core ideas of data structures with intuition before formulas.",
+  "minutes": 10,
+  "url": "https://learn.eda-academy.example/r/R017"
+ },
+ {
+  "id": "R018",
+  "title": "Data Structures: worked examples, step by step",
+  "type": "article",
+  "topic": "Data Structures",
+  "level": "beginner",
+  "description": "Five fully worked data structures problems with every step explained, common mistakes highlighted.",
+  "minutes": 25,
+  "url": "https://learn.eda-academy.example/r/R018"
+ },
+ {
+  "id": "R019",
+  "title": "Data Structures practice set (easy to medium)",
+  "type": "practice",
+  "topic": "Data Structures",
+  "level": "intermediate",
+  "description": "Graded practice problems on data structures that ramp difficulty slowly, with hints and solutions.",
+  "minutes": 40,
+  "url": "https://learn.eda-academy.example/r/R019"
+ },
+ {
+  "id": "R020",
+  "title": "Data Structures live doubt-clearing clinic recording",
+  "type": "video",
+  "topic": "Data Structures",
+  "level": "intermediate",
+  "description": "Mentor answers the most frequent learner questions and doubts about data structures.",
+  "minutes": 45,
+  "url": "https://learn.eda-academy.example/r/R020"
+ },
+ {
+  "id": "R021",
+  "title": "SQL Joins in 10 minutes",
+  "type": "video",
+  "topic": "SQL Joins",
+  "level": "beginner",
+  "description": "A short visual recap of the core ideas of sql joins with intuition before formulas.",
+  "minutes": 10,
+  "url": "https://learn.eda-academy.example/r/R021"
+ },
+ {
+  "id": "R022",
+  "title": "SQL Joins: worked examples, step by step",
+  "type": "article",
+  "topic": "SQL Joins",
+  "level": "beginner",
+  "description": "Five fully worked sql joins problems with every step explained, common mistakes highlighted.",
+  "minutes": 25,
+  "url": "https://learn.eda-academy.example/r/R022"
+ },
+ {
+  "id": "R023",
+  "title": "SQL Joins practice set (easy to medium)",
+  "type": "practice",
+  "topic": "SQL Joins",
+  "level": "intermediate",
+  "description": "Graded practice problems on sql joins that ramp difficulty slowly, with hints and solutions.",
+  "minutes": 40,
+  "url": "https://learn.eda-academy.example/r/R023"
+ },
+ {
+  "id": "R024",
+  "title": "SQL Joins live doubt-clearing clinic recording",
+  "type": "video",
+  "topic": "SQL Joins",
+  "level": "intermediate",
+  "description": "Mentor answers the most frequent learner questions and doubts about sql joins.",
+  "minutes": 45,
+  "url": "https://learn.eda-academy.example/r/R024"
+ },
+ {
+  "id": "R025",
+  "title": "Statistics in 10 minutes",
+  "type": "video",
+  "topic": "Statistics",
+  "level": "beginner",
+  "description": "A short visual recap of the core ideas of statistics with intuition before formulas.",
+  "minutes": 10,
+  "url": "https://learn.eda-academy.example/r/R025"
+ },
+ {
+  "id": "R026",
+  "title": "Statistics: worked examples, step by step",
+  "type": "article",
+  "topic": "Statistics",
+  "level": "beginner",
+  "description": "Five fully worked statistics problems with every step explained, common mistakes highlighted.",
+  "minutes": 25,
+  "url": "https://learn.eda-academy.example/r/R026"
+ },
+ {
+  "id": "R027",
+  "title": "Statistics practice set (easy to medium)",
+  "type": "practice",
+  "topic": "Statistics",
+  "level": "intermediate",
+  "description": "Graded practice problems on statistics that ramp difficulty slowly, with hints and solutions.",
+  "minutes": 40,
+  "url": "https://learn.eda-academy.example/r/R027"
+ },
+ {
+  "id": "R028",
+  "title": "Statistics live doubt-clearing clinic recording",
+  "type": "video",
+  "topic": "Statistics",
+  "level": "intermediate",
+  "description": "Mentor answers the most frequent learner questions and doubts about statistics.",
+  "minutes": 45,
+  "url": "https://learn.eda-academy.example/r/R028"
+ },
+ {
+  "id": "R029",
+  "title": "Linear Regression in 10 minutes",
+  "type": "video",
+  "topic": "Linear Regression",
+  "level": "beginner",
+  "description": "A short visual recap of the core ideas of linear regression with intuition before formulas.",
+  "minutes": 10,
+  "url": "https://learn.eda-academy.example/r/R029"
+ },
+ {
+  "id": "R030",
+  "title": "Linear Regression: worked examples, step by step",
+  "type": "article",
+  "topic": "Linear Regression",
+  "level": "beginner",
+  "description": "Five fully worked linear regression problems with every step explained, common mistakes highlighted.",
+  "minutes": 25,
+  "url": "https://learn.eda-academy.example/r/R030"
+ },
+ {
+  "id": "R031",
+  "title": "Linear Regression practice set (easy to medium)",
+  "type": "practice",
+  "topic": "Linear Regression",
+  "level": "intermediate",
+  "description": "Graded practice problems on linear regression that ramp difficulty slowly, with hints and solutions.",
+  "minutes": 40,
+  "url": "https://learn.eda-academy.example/r/R031"
+ },
+ {
+  "id": "R032",
+  "title": "Linear Regression live doubt-clearing clinic recording",
+  "type": "video",
+  "topic": "Linear Regression",
+  "level": "intermediate",
+  "description": "Mentor answers the most frequent learner questions and doubts about linear regression.",
+  "minutes": 45,
+  "url": "https://learn.eda-academy.example/r/R032"
+ },
+ {
+  "id": "R033",
+  "title": "Classification in 10 minutes",
+  "type": "video",
+  "topic": "Classification",
+  "level": "beginner",
+  "description": "A short visual recap of the core ideas of classification with intuition before formulas.",
+  "minutes": 10,
+  "url": "https://learn.eda-academy.example/r/R033"
+ },
+ {
+  "id": "R034",
+  "title": "Classification: worked examples, step by step",
+  "type": "article",
+  "topic": "Classification",
+  "level": "beginner",
+  "description": "Five fully worked classification problems with every step explained, common mistakes highlighted.",
+  "minutes": 25,
+  "url": "https://learn.eda-academy.example/r/R034"
+ },
+ {
+  "id": "R035",
+  "title": "Classification practice set (easy to medium)",
+  "type": "practice",
+  "topic": "Classification",
+  "level": "intermediate",
+  "description": "Graded practice problems on classification that ramp difficulty slowly, with hints and solutions.",
+  "minutes": 40,
+  "url": "https://learn.eda-academy.example/r/R035"
+ },
+ {
+  "id": "R036",
+  "title": "Classification live doubt-clearing clinic recording",
+  "type": "video",
+  "topic": "Classification",
+  "level": "intermediate",
+  "description": "Mentor answers the most frequent learner questions and doubts about classification.",
+  "minutes": 45,
+  "url": "https://learn.eda-academy.example/r/R036"
+ },
+ {
+  "id": "R037",
+  "title": "Neural Networks in 10 minutes",
+  "type": "video",
+  "topic": "Neural Networks",
+  "level": "beginner",
+  "description": "A short visual recap of the core ideas of neural networks with intuition before formulas.",
+  "minutes": 10,
+  "url": "https://learn.eda-academy.example/r/R037"
+ },
+ {
+  "id": "R038",
+  "title": "Neural Networks: worked examples, step by step",
+  "type": "article",
+  "topic": "Neural Networks",
+  "level": "beginner",
+  "description": "Five fully worked neural networks problems with every step explained, common mistakes highlighted.",
+  "minutes": 25,
+  "url": "https://learn.eda-academy.example/r/R038"
+ },
+ {
+  "id": "R039",
+  "title": "Neural Networks practice set (easy to medium)",
+  "type": "practice",
+  "topic": "Neural Networks",
+  "level": "intermediate",
+  "description": "Graded practice problems on neural networks that ramp difficulty slowly, with hints and solutions.",
+  "minutes": 40,
+  "url": "https://learn.eda-academy.example/r/R039"
+ },
+ {
+  "id": "R040",
+  "title": "Neural Networks live doubt-clearing clinic recording",
+  "type": "video",
+  "topic": "Neural Networks",
+  "level": "intermediate",
+  "description": "Mentor answers the most frequent learner questions and doubts about neural networks.",
+  "minutes": 45,
+  "url": "https://learn.eda-academy.example/r/R040"
+ },
+ {
+  "id": "R041",
+  "title": "Capstone in 10 minutes",
+  "type": "video",
+  "topic": "Capstone",
+  "level": "beginner",
+  "description": "A short visual recap of the core ideas of capstone with intuition before formulas.",
+  "minutes": 10,
+  "url": "https://learn.eda-academy.example/r/R041"
+ },
+ {
+  "id": "R042",
+  "title": "Capstone: worked examples, step by step",
+  "type": "article",
+  "topic": "Capstone",
+  "level": "beginner",
+  "description": "Five fully worked capstone problems with every step explained, common mistakes highlighted.",
+  "minutes": 25,
+  "url": "https://learn.eda-academy.example/r/R042"
+ },
+ {
+  "id": "R043",
+  "title": "Capstone practice set (easy to medium)",
+  "type": "practice",
+  "topic": "Capstone",
+  "level": "intermediate",
+  "description": "Graded practice problems on capstone that ramp difficulty slowly, with hints and solutions.",
+  "minutes": 40,
+  "url": "https://learn.eda-academy.example/r/R043"
+ },
+ {
+  "id": "R044",
+  "title": "Capstone live doubt-clearing clinic recording",
+  "type": "video",
+  "topic": "Capstone",
+  "level": "intermediate",
+  "description": "Mentor answers the most frequent learner questions and doubts about capstone.",
+  "minutes": 45,
+  "url": "https://learn.eda-academy.example/r/R044"
+ },
+ {
+  "id": "R045",
+  "title": "Visualising recursion with call-stack diagrams",
+  "type": "article",
+  "topic": "Recursion",
+  "level": "beginner",
+  "description": "Draw the call stack to understand base cases, recursive cases and stack unwinding.",
+  "minutes": 15,
+  "url": "https://learn.eda-academy.example/r/R045"
+ },
+ {
+  "id": "R046",
+  "title": "Recursion vs loops: when to use which",
+  "type": "video",
+  "topic": "Recursion",
+  "level": "beginner",
+  "description": "Compare recursive and iterative solutions to build intuition.",
+  "minutes": 12,
+  "url": "https://learn.eda-academy.example/r/R046"
+ },
+ {
+  "id": "R047",
+  "title": "How to read a SQL JOIN Venn diagram (and when it lies)",
+  "type": "article",
+  "topic": "SQL Joins",
+  "level": "beginner",
+  "description": "Inner, left, right and full joins explained with small tables.",
+  "minutes": 15,
+  "url": "https://learn.eda-academy.example/r/R047"
+ },
+ {
+  "id": "R048",
+  "title": "Reduced-pace study plan template (6 hrs/week)",
+  "type": "plan",
+  "topic": null,
+  "level": "any",
+  "description": "A lighter weekly schedule that spreads modules over more weeks with checkpoints, for learners who are falling behind or scoring low.",
+  "minutes": 5,
+  "url": "https://learn.eda-academy.example/r/R048"
+ },
+ {
+  "id": "R049",
+  "title": "Spaced-repetition revision plan for weak topics",
+  "type": "plan",
+  "topic": null,
+  "level": "any",
+  "description": "A revision plan that revisits low-score topics with short quizzes at increasing intervals.",
+  "minutes": 5,
+  "url": "https://learn.eda-academy.example/r/R049"
+ },
+ {
+  "id": "R050",
+  "title": "Peer study group sign-up",
+  "type": "community",
+  "topic": null,
+  "level": "any",
+  "description": "Join a small accountability group that meets twice a week online, for motivation and consistency.",
+  "minutes": 5,
+  "url": "https://learn.eda-academy.example/r/R050"
+ },
+ {
+  "id": "R051",
+  "title": "Alumni story: finishing the course while working full time",
+  "type": "article",
+  "topic": null,
+  "level": "any",
+  "description": "How a working professional stayed motivated and consistent, with practical time-management tips.",
+  "minutes": 8,
+  "url": "https://learn.eda-academy.example/r/R051"
+ },
+ {
+  "id": "R052",
+  "title": "Setting a 2-week personal goal",
+  "type": "article",
+  "topic": null,
+  "level": "any",
+  "description": "A short worksheet to reset goals and rebuild momentum when motivation is low.",
+  "minutes": 10,
+  "url": "https://learn.eda-academy.example/r/R052"
+ },
+ {
+  "id": "R053",
+  "title": "EMI restructuring and payment pause policy",
+  "type": "policy",
+  "topic": null,
+  "level": "any",
+  "description": "Learners facing financial difficulty can restructure EMIs or pause payments for up to 60 days without losing access.",
+  "minutes": 5,
+  "url": "https://learn.eda-academy.example/r/R053"
+ },
+ {
+  "id": "R054",
+  "title": "Need-based scholarship application",
+  "type": "policy",
+  "topic": null,
+  "level": "any",
+  "description": "Scholarships covering up to 50% of remaining fees for learners facing financial hardship or job loss.",
+  "minutes": 10,
+  "url": "https://learn.eda-academy.example/r/R054"
+ },
+ {
+  "id": "R055",
+  "title": "Wellbeing and counselling support",
+  "type": "support",
+  "topic": null,
+  "level": "any",
+  "description": "Free confidential sessions with a learner counsellor for stress, burnout or motivation.",
+  "minutes": 5,
+  "url": "https://learn.eda-academy.example/r/R055"
+ }
+]
