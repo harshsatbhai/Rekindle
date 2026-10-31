@@ -330,6 +330,33 @@ class World:
             c.execute("INSERT INTO _world_meta VALUES('seed', ?)", (str(seed),))
         self.advance_to(day, {})
 
+    def add_learner(self, spec: LearnerSpec, cohort: str = "DS-2026-Oct"):
+        """Add one learner to an existing world and simulate their history up to the current clock.
+
+        They then evolve with everyone else on advance_to(); reset() rebuilds the seeded cohort without them.
+        """
+        day = self.clock
+        o = simulate(spec, day)
+        with self._conn() as c:
+            if c.execute("SELECT 1 FROM learners WHERE learner_id=?", (spec.learner_id,)).fetchone():
+                raise ValueError(f"learner {spec.learner_id} already exists")
+            c.execute("INSERT INTO learners VALUES(?,?,?,?,?,?,?,?)",
+                      (spec.learner_id, spec.name, spec.email, cohort, spec.enrolled_day, spec.plan,
+                       spec.do_not_contact, "email"))
+            c.execute("INSERT INTO _world_truth VALUES(?,?,?,?,?,?,?,?,?,?)",
+                      (spec.learner_id, spec.archetype, ARCH_CAUSE.get(spec.archetype), spec.onset, o.stuck_topic,
+                       spec.ability, spec.base_login, spec.due_day, spec.vac_start, spec.seed))
+            c.executemany("INSERT INTO logins VALUES(?,?,?,?)", o.logins)
+            c.executemany("INSERT INTO attendance VALUES(?,?,?)", o.attendance)
+            c.executemany("INSERT INTO quiz_scores VALUES(?,?,?,?,?)", o.quizzes)
+            c.executemany("INSERT INTO topic_progress VALUES(?,?,?,?,?,?)",
+                          [(spec.learner_id, t, p["started_day"], p["completed_day"], p["time"], p["rewatches"])
+                           for t, p in o.progress.items()])
+            c.executemany("INSERT INTO payments VALUES(?,?,?,?,?)", o.payments)
+            c.executemany("INSERT INTO support_tickets VALUES(?,?,?,?)", o.tickets)
+            c.executemany("INSERT INTO surveys VALUES(?,?,?,?)", o.surveys)
+        return o
+
     def specs(self) -> list[LearnerSpec]:
         with self._conn() as c:
             rows = c.execute("""SELECT l.learner_id, l.name, l.email, t.archetype, l.enrolled_day, l.plan,

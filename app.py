@@ -278,5 +278,13 @@ with tabs[6]:
     st.caption(f"{len(files)} emails received by the SMTP sink · invites in {config.CALENDAR_DIR}")
     for f in files[:50]:
         m = email.message_from_bytes(f.read_bytes())
-        with st.expander(f"{m['To']} · {m['Subject']}"):
-            st.text(m.get_payload(decode=True).decode(errors="replace") if not m.is_multipart() else m.get_payload()[0].get_payload())
+        real = m["X-EDA-Delivery"]
+        with st.expander(f"{'📨 REAL · ' if real else ''}{m['To']} · {m['Subject']}"):
+            if real:
+                st.success(f"Delivered to a real inbox ({real}); this is the local copy.")
+            parts = list(m.walk()) if m.is_multipart() else [m]
+            text = next((p for p in parts if p.get_content_type() == "text/plain" and not p.get_filename()), None)
+            st.text(text.get_payload(decode=True).decode(errors="replace") if text else "")
+            files = [p.get_filename() for p in parts if p.get_filename()]
+            if files:
+                st.caption("📎 " + ", ".join(files))

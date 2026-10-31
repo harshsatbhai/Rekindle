@@ -46,6 +46,26 @@ the same content guardrails, and a draft that fails is replaced by the template.
 tracking evidence, so the model can't tell a learner what we observed about them. A full demo with the LLM takes ~3 min
 (mostly the rate cap). `evaluate.py` runs with the LLM off by default so metrics are deterministic and free.
 
+### Adding a learner and emailing them for real
+
+```bash
+python add_learner.py --id L042 --name "Harsh Satbhai" --email you@gmail.com --onset 14 --seed 592   # risk ≈ 0.78
+```
+
+Risk is never typed in: the learner gets a simulated history and the agent scores them on the next cycle.
+Simulated learners are only ever "emailed" into the local outbox. To deliver a real email (with the `.ics`
+invite attached) to specific addresses, add a Gmail [app password](https://myaccount.google.com/apppasswords) to `.env`:
+
+```bash
+EDA_RELAY_HOST=smtp.gmail.com
+EDA_RELAY_PORT=587
+EDA_RELAY_USER=you@gmail.com
+EDA_RELAY_PASSWORD=xxxxxxxxxxxxxxxx      # 16-char app password, not your Google password
+EDA_REAL_RECIPIENTS=you@gmail.com        # comma-separated allowlist; nobody else gets real mail
+```
+
+The human approval checkpoint still applies, and the local copy shows as 📨 REAL in the dashboard outbox.
+
 ## What the demo shows (the required demo)
 
 | Required | Where |

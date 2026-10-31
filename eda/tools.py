@@ -157,20 +157,51 @@ class ResourceSearch:
 
 
 # ------------------------------------------------------------------------------ 4. messaging
-def send_email(to: str, subject: str, body: str, host=None, port=None, timeout=5.0) -> dict:
+def _is_real(to: str) -> bool:
+    return bool(config.RELAY_HOST and config.RELAY_USER and config.RELAY_PASSWORD) and to.lower() in config.REAL_RECIPIENTS
+
+
+def _build(sender: str, to: str, subject: str, body: str, attachments, msg_id: str) -> EmailMessage:
     msg = EmailMessage()
-    msg["From"], msg["To"], msg["Subject"] = config.SENDER, to, subject
-    msg["Message-ID"] = f"<{uuid.uuid4()}@eda-academy.example>"
+    msg["From"], msg["To"], msg["Subject"], msg["Message-ID"] = sender, to, subject, msg_id
     msg.set_content(body)
-    try:
+    for path in attachments:
+        p = Path(path)
+        if p.suffix == ".ics":  # calendar invite: mail clients show it as an event
+            msg.add_attachment(p.read_text(), subtype="calendar", filename=p.name, params={"method": "REQUEST"})
+        else:
+            msg.add_attachment(p.read_bytes(), maintype="application", subtype="octet-stream", filename=p.name)
+    return msg
+
+
+def send_email(to: str, subject: str, body: str, host=None, port=None, timeout=5.0, attachments=()) -> dict:
+    msg_id = f"<{uuid.uuid4()}@eda-academy.example>"
+    real = _is_real(to)
+    if real:  # allowlisted address: deliver for real through the relay (STARTTLS + login)
+        try:
+            with smtplib.SMTP(config.RELAY_HOST, config.RELAY_PORT, timeout=20) as s:
+                s.starttls()
+                s.login(config.RELAY_USER, config.RELAY_PASSWORD)
+                reply = s.send_message(_build(f"Rekindle Learner Success <{config.RELAY_USER}>", to, subject, body,
+                                              attachments, msg_id))
+        except (OSError, smtplib.SMTPException) as e:
+            raise ToolError(f"real SMTP delivery via {config.RELAY_HOST} failed: {e}") from e
+        if reply:
+            raise ToolError(f"SMTP relay refused recipients: {reply}")
+    msg = _build(config.SENDER, to, subject, body, attachments, msg_id)
+    if real:
+        msg["X-EDA-Delivery"] = f"real via {config.RELAY_HOST}"
+    try:  # every message is also captured by the local sink, so it shows in the dashboard outbox
         with smtplib.SMTP(host or config.SMTP_HOST, port or config.SMTP_PORT, timeout=timeout) as s:
             s.ehlo()
             reply = s.send_message(msg)
     except (OSError, smtplib.SMTPException) as e:
+        if real:  # already delivered for real; only the local copy is missing
+            return {"message_id": msg_id, "to": to, "real": True, "sink_error": str(e)}
         raise ToolError(f"SMTP delivery failed: {e}") from e
     if reply:
         raise ToolError(f"SMTP refused recipients: {reply}")
-    return {"message_id": msg["Message-ID"], "to": to}
+    return {"message_id": msg_id, "to": to, "real": real}
 
 
 def notify_slack(text: str) -> bool:
@@ -229,7 +260,8 @@ class ToolBox:
         if name == "search_resources":
             return self.search.search(kw["query"], kw.get("k", 3), kw.get("topic"), kw.get("types"))
         if name == "send_message":
-            res = send_email(kw["to"], kw["subject"], kw["body"], port=kw.get("port", self.smtp_port))
+            res = send_email(kw["to"], kw["subject"], kw["body"], port=kw.get("port", self.smtp_port),
+                             attachments=[a for a in kw.get("attachments", ()) if a])
             if kw.get("notify"):
                 try:
                     res["slack"] = notify_slack(kw["notify"])

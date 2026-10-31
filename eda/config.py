@@ -10,11 +10,6 @@ OUTBOX_DIR = DATA_DIR / "outbox"            # emails captured by the local SMTP 
 CALENDAR_DIR = DATA_DIR / "calendar"        # .ics invites produced by schedule_session
 RESOURCES_FILE = ROOT / "eda" / "resources.json"
 
-SMTP_HOST = os.getenv("EDA_SMTP_HOST", "127.0.0.1")
-SMTP_PORT = int(os.getenv("EDA_SMTP_PORT", "8025"))
-SLACK_WEBHOOK_URL = os.getenv("EDA_SLACK_WEBHOOK_URL")  # optional: notify counsellors
-SENDER = os.getenv("EDA_SENDER", "learner-success@eda-academy.example")
-
 def _load_dotenv(path):
     """Minimal .env loader (KEY=VALUE lines); real environment variables take precedence."""
     if path.exists():
@@ -25,6 +20,19 @@ def _load_dotenv(path):
 
 
 _load_dotenv(ROOT / ".env")
+
+SMTP_HOST = os.getenv("EDA_SMTP_HOST", "127.0.0.1")
+SMTP_PORT = int(os.getenv("EDA_SMTP_PORT", "8025"))
+SLACK_WEBHOOK_URL = os.getenv("EDA_SLACK_WEBHOOK_URL")  # optional: notify counsellors
+SENDER = os.getenv("EDA_SENDER", "learner-success@eda-academy.example")
+
+# Real delivery (e.g. Gmail SMTP with an app password), only for allowlisted recipients.
+# Everyone else, including all simulated learners, still goes to the local sink only.
+RELAY_HOST = os.getenv("EDA_RELAY_HOST")                     # e.g. smtp.gmail.com
+RELAY_PORT = int(os.getenv("EDA_RELAY_PORT", "587"))        # STARTTLS
+RELAY_USER = os.getenv("EDA_RELAY_USER")                     # e.g. you@gmail.com
+RELAY_PASSWORD = os.getenv("EDA_RELAY_PASSWORD")             # Gmail app password, never your real password
+REAL_RECIPIENTS = {e.strip().lower() for e in os.getenv("EDA_REAL_RECIPIENTS", "").split(",") if e.strip()}
 
 LLM_MODEL = os.getenv("EDA_LLM_MODEL", "nvidia/nemotron-3-ultra-550b-a55b")
 LLM_BASE_URL = os.getenv("EDA_LLM_BASE_URL", "https://integrate.api.nvidia.com/v1")

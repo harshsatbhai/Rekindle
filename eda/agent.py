@@ -68,6 +68,7 @@ class Agent:
     def run_cycle(self, day: int) -> dict:
         cycle = self.mem.next_cycle()
         self.mem.set_meta("day", day)
+        self._cohort = None  # re-read the roster each cycle so newly enrolled learners are picked up
         learners = self._learners()
         retries = self.retry_failed_sends(day, cycle)
         due = [i for i in self.mem.interventions(status="sent") if i["followup_day"] <= day]
@@ -399,8 +400,9 @@ class Agent:
                 session_file = r.data["file"]
                 self.mem.update_intervention(iid, session_file=session_file)
         r = self.tools.call("send_message", to=learner["email"], subject=iv["subject"], body=iv["body"],
-                            notify=f"[EDA] {spec['label']} sent to {lid} (approved by {iv['reviewer']})")
-        self._log(cycle, day, lid, "act", f"send_message via SMTP → {'delivered' if r.ok else 'FAILED'} "
+                            attachments=[session_file], notify=f"[EDA] {spec['label']} sent to {lid} (approved by {iv['reviewer']})")
+        how = "REAL email delivered" if r.ok and (r.data or {}).get("real") else "delivered"
+        self._log(cycle, day, lid, "act", f"send_message via SMTP → {how if r.ok else 'FAILED'} "
                   f"(attempts {r.attempts}, {r.latency_ms} ms)", {"error": r.error, **(r.data or {})})
         if not r.ok:
             self.mem.update_intervention(iid, status="send_failed")
