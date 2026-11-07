@@ -1,6 +1,13 @@
 """Streamlit dashboard for Rekindle, the Early-Disengagement Detection and Re-engagement Agent.
 
     streamlit run app.py
+
+Notes on rendering:
+- No auto-refresh loop and no animated progress bars, so nothing fades in or "breathes"
+  while a cycle runs. Drafts arrive one by one; use the explicit "Refresh drafts"
+  button in the approval tab to pick up newly-drafted messages mid-cycle.
+- A small CSS block disables the default hover/focus transitions Streamlit applies
+  to buttons, expanders and info/error blocks.
 """
 from __future__ import annotations
 
@@ -8,13 +15,11 @@ import email
 import subprocess
 import sys
 import threading
-import time
 from pathlib import Path
 
 import altair as alt
 import pandas as pd
 import streamlit as st
-from streamlit_autorefresh import st_autorefresh
 
 from eda import config, drafting
 from eda.diagnoser import CAUSE_LABEL
@@ -27,6 +32,33 @@ BLUE, ORANGE, MUTED = "#2a78d6", "#eb6834", "#8a8984"
 STATUS_ICON = {"monitoring": "🟢", "recovered": "💚", "watch": "🟡", "insufficient_data": "⚪", "at_risk": "🔴",
                "awaiting_approval": "⏸️", "intervention_active": "🔵", "escalated": "🧑‍💼"}
 PHASE_ICON = {"plan": "🗺️", "act": "🔧", "observe": "👀", "replan": "🔁", "guardrail": "🛡️", "approval": "✅", "outcome": "📈"}
+
+# ------------------------------------------------------------------ static styling
+# No transitions anywhere: buttons, expanders, alerts, progress, tabs. This removes the
+# hover fade that can read as a "breathing" effect on some themes.
+st.markdown(
+    """
+    <style>
+    *, *::before, *::after {
+        transition: none !important;
+        animation: none !important;
+    }
+    div[data-testid="stButton"] > button,
+    div[data-testid="stDownloadButton"] > button,
+    div[data-testid="stExpander"] > details > summary,
+    div[data-testid="stAlert"],
+    div[data-testid="stProgress"] > div > div {
+        transition: none !important;
+        animation: none !important;
+    }
+    /* Hide the little moving indicator Streamlit puts on running blocks */
+    div[data-testid="stStatusWidget"] { display: none !important; }
+    /* Kill the "spinner" animation on in-flight reruns */
+    .stSpinner > div { animation: none !important; }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
 
 
 @st.cache_resource
@@ -43,7 +75,7 @@ run = get_runner()
 agent, mem = run.agent, run.mem
 
 
-# ── STREAMING: one background cycle at a time, tracked in session_state ─────────────
+# ── background cycle (unchanged behaviour, no polling) ─────────────────────────────
 def _start_cycle_thread(advance_days: int | None):
     if st.session_state.get("cycle_thread") and st.session_state.cycle_thread.is_alive():
         return False
@@ -53,7 +85,7 @@ def _start_cycle_thread(advance_days: int | None):
             if advance_days:
                 run.advance(advance_days)
             run.run_cycle()
-        except Exception as e:  # surface on the next rerun
+        except Exception as e:
             st.session_state["cycle_error"] = f"{type(e).__name__}: {e}"
 
     t = threading.Thread(target=_worker, daemon=True, name="rekindle-cycle")
@@ -86,11 +118,11 @@ with st.sidebar:
         if _start_cycle_thread(config.FOLLOWUP_DAYS):
             st.rerun()
 
-    # ── STREAMING: live progress while the cycle runs
+    # Plain text status instead of st.progress (no animated fill)
     if running:
-        st.info(f"🔄 Cycle {prog['cycle']} running… {prog['pending_approval']} draft(s) ready so far")
-        st.progress(min(1.0, prog["pending_approval"] / max(1, prog["at_risk"] or 1)),
-                    text=f"{prog['pending_approval']} / {prog['at_risk']} at-risk learners drafted")
+        st.info(f"🔄 Cycle {prog['cycle']} running · {prog['pending_approval']} of "
+                f"{max(prog['at_risk'], prog['pending_approval'])} drafts ready so far.\n\n"
+                f"Open the **Approval queue** tab and press **🔄 Refresh drafts** to pull new ones.")
     elif "cycle_error" in st.session_state:
         st.error(st.session_state["cycle_error"])
 
@@ -117,10 +149,6 @@ pending = [i for i in ivs if i["status"] == "pending_approval"]
 
 tabs = st.tabs([f"📡 Risk radar", f"✅ Approval queue ({len(pending)})", "🔍 Learner", "📈 Outcomes", "🧠 Agent trace",
                 "🧪 Evaluation", "✉️ Outbox"])
-
-# ── STREAMING: while the cycle runs, poll every 2s so drafts appear one-by-one
-if _cycle_running():
-    st_autorefresh(interval=2000, key="cycle-poll")
 
 # ------------------------------------------------------------------ risk radar
 with tabs[0]:
@@ -152,14 +180,21 @@ with tabs[0]:
 # ------------------------------------------------------------------ approval queue
 with tabs[1]:
     st.subheader("Human approval checkpoint")
-    st.caption("Nothing is sent until a named reviewer approves. New drafts appear here as soon as the LLM finishes "
-               "each learner — approve one while the rest are still being written.")
+    st.caption("Nothing is sent until a named reviewer approves. Drafts are written to memory as soon as the LLM "
+               "finishes each learner — press **🔄 Refresh drafts** to pick up new ones mid-cycle.")
 
-    # ── STREAMING: newest drafts first, and the first un-reviewed draft auto-expands
+    left, right = st.columns([1, 3])
+    if left.button("🔄 Refresh drafts", width="stretch"):
+        st.rerun()
+    if _cycle_running():
+        right.caption(f"Cycle {agent.progress()['cycle']} still running. New drafts appear here when you refresh.")
+    elif not pending:
+        right.caption("No drafts waiting.")
+
     pending = sorted(pending, key=lambda i: i["id"], reverse=True)  # newest first
     if not pending:
         if _cycle_running():
-            st.info("Drafting in progress… drafts will appear here one by one.")
+            st.info("Drafting in progress… press **🔄 Refresh drafts** to pull new ones.")
         else:
             st.success("Queue is empty.")
 
@@ -168,11 +203,10 @@ with tabs[1]:
         name = name_by_id.get(iv["learner_id"], iv["learner_id"])
         with st.expander(f"#{iv['id']} · {iv['learner_id']} {name} · {CATALOG[iv['type']]['label']}",
                          expanded=iv is pending[0]):
-            # ── STREAMING: tiny "just arrived" hint while the cycle is still going
             if _cycle_running() and iv is pending[0]:
                 st.caption("✨ Just drafted — the cycle is still running, you can approve this now.")
-            left, right = st.columns([3, 2])
-            with left:
+            lcol, rcol = st.columns([3, 2])
+            with lcol:
                 subject = st.text_input("Subject", iv["subject"], key=f"s{iv['id']}")
                 body = st.text_area("Message (editable)", iv["body"], height=330, key=f"b{iv['id']}")
                 note = st.text_input("Reviewer note (optional)", key=f"n{iv['id']}")
@@ -189,7 +223,7 @@ with tabs[1]:
                     st.rerun()
                 for v in st.session_state.get(f"err{iv['id']}", []):
                     st.error(f"🛑 **Refused** ({v['rule']}): {v['detail']}")
-            with right:
+            with rcol:
                 st.markdown(f"**Why:** {iv['rationale']}")
                 st.info(iv["explanation"] or "")
                 probs = (iv["baseline"] or {}).get("cause_probs", {})
@@ -236,8 +270,8 @@ with tabs[2]:
     long = weeks.melt("week_start", var_name="series", value_name="rate").dropna()
     sent = pd.DataFrame([{"day": i["sent_day"], "what": CATALOG[i["type"]]["label"]} for i in ivs
                          if i["learner_id"] == lid and i["sent_day"] is not None])
-    left, right = st.columns(2)
-    with left:
+    lcol, rcol = st.columns(2)
+    with lcol:
         base = alt.Chart(long).mark_line(point=alt.OverlayMarkDef(size=60, filled=True), strokeWidth=2).encode(
             x=alt.X("week_start:Q", title="day (week start)"), y=alt.Y("rate:Q", axis=alt.Axis(format="%"), scale=alt.Scale(domain=[0, 1]), title=None),
             color=alt.Color("series:N", scale=alt.Scale(range=[BLUE, ORANGE]), legend=alt.Legend(orient="top", title=None)),
@@ -247,7 +281,7 @@ with tabs[2]:
             layers.append(alt.Chart(sent).mark_rule(strokeDash=[4, 3], color=MUTED).encode(x="day:Q", tooltip=["what", "day"]))
         st.markdown("**Weekly engagement** (dashed = intervention sent)")
         st.altair_chart(alt.layer(*layers).properties(height=260), width="stretch")
-    with right:
+    with rcol:
         st.markdown("**Quiz scores** (line = 55% fail threshold)")
         if len(qz):
             pts = alt.Chart(qz).mark_circle(size=70, color=BLUE, opacity=.85).encode(
