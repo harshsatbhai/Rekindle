@@ -7,11 +7,14 @@ from __future__ import annotations
 import email
 import subprocess
 import sys
+import threading
+import time
 from pathlib import Path
 
 import altair as alt
 import pandas as pd
 import streamlit as st
+from streamlit_autorefresh import st_autorefresh
 
 from eda import config, drafting
 from eda.diagnoser import CAUSE_LABEL
@@ -39,22 +42,58 @@ def get_runner():
 run = get_runner()
 agent, mem = run.agent, run.mem
 
+
+# ── STREAMING: one background cycle at a time, tracked in session_state ─────────────
+def _start_cycle_thread(advance_days: int | None):
+    if st.session_state.get("cycle_thread") and st.session_state.cycle_thread.is_alive():
+        return False
+
+    def _worker():
+        try:
+            if advance_days:
+                run.advance(advance_days)
+            run.run_cycle()
+        except Exception as e:  # surface on the next rerun
+            st.session_state["cycle_error"] = f"{type(e).__name__}: {e}"
+
+    t = threading.Thread(target=_worker, daemon=True, name="rekindle-cycle")
+    st.session_state.cycle_thread = t
+    st.session_state.pop("cycle_error", None)
+    t.start()
+    return True
+
+
+def _cycle_running() -> bool:
+    t = st.session_state.get("cycle_thread")
+    return bool(t and t.is_alive())
+
+
 # ------------------------------------------------------------------ sidebar
 with st.sidebar:
     st.title("🎓 Rekindle")
     st.metric("Simulation day", run.day, help=f"Day 0 = {day_to_date(0):%d %b %Y}")
     st.caption(f"Today: {day_to_date(run.day):%A %d %b %Y}")
     reviewer = st.text_input("Reviewer (you)", "Coach Asha")
+
+    running = _cycle_running()
+    prog = agent.progress()
+
     c1, c2 = st.columns(2)
-    if c1.button("▶ Run cycle", width="stretch", type="primary"):
-        with st.spinner("Agent planning → acting → observing ..."):
-            run.run_cycle()
-        st.rerun()
-    if c2.button(f"⏩ +{config.FOLLOWUP_DAYS} days", width="stretch"):
-        with st.spinner("Advancing the world and running a cycle ..."):
-            run.advance(config.FOLLOWUP_DAYS)
-            run.run_cycle()
-        st.rerun()
+    if c1.button("▶ Run cycle", width="stretch", type="primary", disabled=running):
+        if _start_cycle_thread(None):
+            st.rerun()
+    if c2.button(f"⏩ +{config.FOLLOWUP_DAYS} days", width="stretch", disabled=running):
+        if _start_cycle_thread(config.FOLLOWUP_DAYS):
+            st.rerun()
+
+    # ── STREAMING: live progress while the cycle runs
+    if running:
+        st.info(f"🔄 Cycle {prog['cycle']} running… {prog['pending_approval']} draft(s) ready so far")
+        st.progress(min(1.0, prog["pending_approval"] / max(1, prog["at_risk"] or 1)),
+                    text=f"{prog['pending_approval']} / {prog['at_risk']} at-risk learners drafted")
+    elif "cycle_error" in st.session_state:
+        st.error(st.session_state["cycle_error"])
+
     outage = st.toggle("Simulate mail-server outage", value=st.session_state.get("outage", False),
                        help="Points send_message at a dead SMTP port to demonstrate retries and failure handling")
     if outage != st.session_state.get("outage", False):
@@ -62,8 +101,9 @@ with st.sidebar:
         agent.tools = ToolBox(smtp_port=1, retry_backoff=(0.2, 0.4)) if outage else ToolBox()
     st.divider()
     seed = st.number_input("Cohort seed", value=7, step=1)
-    if st.button("↺ Reset world & memory", width="stretch"):
+    if st.button("↺ Reset world & memory", width="stretch", disabled=running):
         run.reset(int(seed))
+        st.session_state.pop("cycle_thread", None)
         st.rerun()
     st.divider()
     st.caption(f"**Drafting:** {drafting.llm_status()}")
@@ -78,12 +118,16 @@ pending = [i for i in ivs if i["status"] == "pending_approval"]
 tabs = st.tabs([f"📡 Risk radar", f"✅ Approval queue ({len(pending)})", "🔍 Learner", "📈 Outcomes", "🧠 Agent trace",
                 "🧪 Evaluation", "✉️ Outbox"])
 
+# ── STREAMING: while the cycle runs, poll every 2s so drafts appear one-by-one
+if _cycle_running():
+    st_autorefresh(interval=2000, key="cycle-poll")
+
 # ------------------------------------------------------------------ risk radar
 with tabs[0]:
-    if not states:
+    if not states and not _cycle_running():
         st.info("No cycle run yet. Press **▶ Run cycle** in the sidebar.")
     else:
-        counts = pd.Series([s["status"] for s in states.values()]).value_counts()
+        counts = pd.Series([s["status"] for s in states.values()]).value_counts() if states else pd.Series(dtype=int)
         cols = st.columns(6)
         for col, (label, keys) in zip(cols, [("Monitored", None), ("Needs approval", ["awaiting_approval"]),
                                               ("Intervention active", ["intervention_active"]), ("Recovered", ["recovered"]),
@@ -108,12 +152,25 @@ with tabs[0]:
 # ------------------------------------------------------------------ approval queue
 with tabs[1]:
     st.subheader("Human approval checkpoint")
-    st.caption("Nothing is sent until a named reviewer approves. Edits are re-checked against the content policy before sending.")
+    st.caption("Nothing is sent until a named reviewer approves. New drafts appear here as soon as the LLM finishes "
+               "each learner — approve one while the rest are still being written.")
+
+    # ── STREAMING: newest drafts first, and the first un-reviewed draft auto-expands
+    pending = sorted(pending, key=lambda i: i["id"], reverse=True)  # newest first
     if not pending:
-        st.success("Queue is empty.")
+        if _cycle_running():
+            st.info("Drafting in progress… drafts will appear here one by one.")
+        else:
+            st.success("Queue is empty.")
+
+    name_by_id = learners.set_index("learner_id")["name"].to_dict()
     for iv in pending:
-        name = learners.set_index("learner_id").loc[iv["learner_id"], "name"]
-        with st.expander(f"#{iv['id']} · {iv['learner_id']} {name} · {CATALOG[iv['type']]['label']}", expanded=iv is pending[0]):
+        name = name_by_id.get(iv["learner_id"], iv["learner_id"])
+        with st.expander(f"#{iv['id']} · {iv['learner_id']} {name} · {CATALOG[iv['type']]['label']}",
+                         expanded=iv is pending[0]):
+            # ── STREAMING: tiny "just arrived" hint while the cycle is still going
+            if _cycle_running() and iv is pending[0]:
+                st.caption("✨ Just drafted — the cycle is still running, you can approve this now.")
             left, right = st.columns([3, 2])
             with left:
                 subject = st.text_input("Subject", iv["subject"], key=f"s{iv['id']}")
@@ -147,6 +204,7 @@ with tabs[1]:
                             "".join(f"\n- ⚠️ {w['detail']}" for w in g.get("warnings", [])))
                 st.caption(f"Drafted by: {iv['drafted_by']}" + (f" · session on day {iv['session_day']} "
                            f"({day_to_date(iv['session_day']):%a %d %b})" if iv["session_day"] else ""))
+
     esc = [i for i in ivs if i["status"] == "escalated"]
     failed = [i for i in ivs if i["status"] == "send_failed"]
     if failed:
@@ -263,7 +321,7 @@ with tabs[4]:
 # ------------------------------------------------------------------ evaluation
 with tabs[5]:
     st.caption("Runs `evaluate.py` in an isolated data directory (does not touch this demo's state).")
-    if st.button("Run evaluation (~35 s)"):
+    if st.button("Run evaluation (~35 s)", disabled=_cycle_running()):
         with st.spinner("Evaluating ..."):
             p = subprocess.run([sys.executable, "evaluate.py"], capture_output=True, text=True, cwd=config.ROOT)
         if p.returncode:

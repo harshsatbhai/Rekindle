@@ -68,23 +68,44 @@ class Agent:
     def run_cycle(self, day: int) -> dict:
         cycle = self.mem.next_cycle()
         self.mem.set_meta("day", day)
+        self.mem.set_meta("cycle_running", True)   # visible to the UI while we work
         self._cohort = None  # re-read the roster each cycle so newly enrolled learners are picked up
-        learners = self._learners()
-        retries = self.retry_failed_sends(day, cycle)
-        due = [i for i in self.mem.interventions(status="sent") if i["followup_day"] <= day]
-        self._log(cycle, day, None, "plan", f"Cycle {cycle} (day {day}): monitor {len(learners)} learners, "
-                  f"measure {len(due)} due follow-ups, retry {retries} failed sends")
-        # learners are independent; with a remote LLM in the loop, process them in parallel to hide latency
-        workers = config.LLM_WORKERS if drafting.llm_status().startswith("Nemotron") else 1
-        if workers > 1:
-            with ThreadPoolExecutor(workers) as pool:
-                list(pool.map(lambda lr: self._episode(cycle, day, lr), learners))
-        else:
-            for lr in learners:
-                self._episode(cycle, day, lr)
-        summary = self.summary()
-        self._log(cycle, day, None, "observe", "Cycle complete", summary)
-        return summary
+        try:
+            learners = self._learners()
+            retries = self.retry_failed_sends(day, cycle)
+            due = [i for i in self.mem.interventions(status="sent") if i["followup_day"] <= day]
+            self._log(cycle, day, None, "plan", f"Cycle {cycle} (day {day}): monitor {len(learners)} learners, "
+                      f"measure {len(due)} due follow-ups, retry {retries} failed sends")
+            # learners are independent; with a remote LLM in the loop, process them in parallel to hide latency
+            workers = config.LLM_WORKERS if drafting.llm_status().startswith("Nemotron") else 1
+            if workers > 1:
+                with ThreadPoolExecutor(workers) as pool:
+                    list(pool.map(lambda lr: self._episode(cycle, day, lr), learners))
+            else:
+                for lr in learners:
+                    self._episode(cycle, day, lr)
+            summary = self.summary()
+            self._log(cycle, day, None, "observe", "Cycle complete", summary)
+            return summary
+        finally:
+            self.mem.set_meta("cycle_running", False)
+
+    def progress(self) -> dict:
+        """Cheap snapshot the UI can poll while a cycle runs (no heavy work)."""
+        states = self.mem.all_states()
+        ivs = self.mem.interventions()
+        drafted_this_cycle = [i for i in ivs if i["status"] == "pending_approval"]
+        at_risk = [s for s in states if s.get("status") in ("awaiting_approval", "at_risk", "escalated")]
+        return {
+            "running": bool(self.mem.get_meta("cycle_running", False)),
+            "cycle": self.mem.get_meta("cycle", 0),
+            "day": self.mem.get_meta("day", config.DETECTION_DAY),
+            "learners_seen": len(states),
+            "at_risk": len(at_risk),
+            "pending_approval": len(drafted_this_cycle),
+            "measured": sum(1 for i in ivs if i["status"] == "measured"),
+            "escalated": sum(1 for i in ivs if i["status"] == "escalated"),
+        }
 
     def review(self, iid: int, decision: str, reviewer: str, body: str | None = None, subject: str | None = None,
                note: str | None = None, day: int | None = None) -> dict:
