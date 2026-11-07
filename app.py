@@ -2,12 +2,11 @@
 
     streamlit run app.py
 
-Notes on rendering:
-- No auto-refresh loop and no animated progress bars, so nothing fades in or "breathes"
-  while a cycle runs. Drafts arrive one by one; use the explicit "Refresh drafts"
-  button in the approval tab to pick up newly-drafted messages mid-cycle.
-- A small CSS block disables the default hover/focus transitions Streamlit applies
-  to buttons, expanders and info/error blocks.
+Rendering notes:
+- While a cycle is running, st_autorefresh polls every 1.5s so drafts appear one by one.
+- A global CSS override sets transition/animation to none and forces opacity:1 on every
+  Streamlit block container, so the per-rerun re-mount does not show a fade-in.
+- No animated progress bar: the sidebar shows a plain text count instead of st.progress.
 """
 from __future__ import annotations
 
@@ -20,6 +19,7 @@ from pathlib import Path
 import altair as alt
 import pandas as pd
 import streamlit as st
+from streamlit_autorefresh import st_autorefresh
 
 from eda import config, drafting
 from eda.diagnoser import CAUSE_LABEL
@@ -33,27 +33,41 @@ STATUS_ICON = {"monitoring": "🟢", "recovered": "💚", "watch": "🟡", "insu
                "awaiting_approval": "⏸️", "intervention_active": "🔵", "escalated": "🧑‍💼"}
 PHASE_ICON = {"plan": "🗺️", "act": "🔧", "observe": "👀", "replan": "🔁", "guardrail": "🛡️", "approval": "✅", "outcome": "📈"}
 
-# ------------------------------------------------------------------ static styling
-# No transitions anywhere: buttons, expanders, alerts, progress, tabs. This removes the
-# hover fade that can read as a "breathing" effect on some themes.
+# ------------------------------------------------------------------ global no-animation CSS
+# Targets every Streamlit block container so the per-rerun re-mount never fades.
 st.markdown(
     """
     <style>
+    /* 1) Disable all transitions / keyframe animations globally. */
     *, *::before, *::after {
         transition: none !important;
         animation: none !important;
     }
-    div[data-testid="stButton"] > button,
-    div[data-testid="stDownloadButton"] > button,
-    div[data-testid="stExpander"] > details > summary,
+
+    /* 2) Force full opacity on every Streamlit block container, even the transient
+          wrappers Streamlit adds while re-mounting on each rerun. */
+    [data-testid="stAppViewContainer"] *,
+    [data-testid="stSidebar"] *,
+    [data-testid="stBlock"] {
+        opacity: 1 !important;
+    }
+
+    /* 3) Kill entry animations / fade-ins on the elements Streamlit animates. */
     div[data-testid="stAlert"],
-    div[data-testid="stProgress"] > div > div {
+    div[data-testid="stDataFrame"],
+    div[data-testid="stExpander"],
+    div[data-testid="stMetric"],
+    div[data-testid="stTabs"],
+    div[data-testid="stVerticalBlock"] {
         transition: none !important;
         animation: none !important;
+        opacity: 1 !important;
     }
-    /* Hide the little moving indicator Streamlit puts on running blocks */
+
+    /* 4) Hide the running-status widget (the little pulsing indicator). */
     div[data-testid="stStatusWidget"] { display: none !important; }
-    /* Kill the "spinner" animation on in-flight reruns */
+
+    /* 5) No spinner animation. */
     .stSpinner > div { animation: none !important; }
     </style>
     """,
@@ -75,7 +89,7 @@ run = get_runner()
 agent, mem = run.agent, run.mem
 
 
-# ── background cycle (unchanged behaviour, no polling) ─────────────────────────────
+# ── background cycle (unchanged behaviour) ─────────────────────────────────────────
 def _start_cycle_thread(advance_days: int | None):
     if st.session_state.get("cycle_thread") and st.session_state.cycle_thread.is_alive():
         return False
@@ -118,11 +132,10 @@ with st.sidebar:
         if _start_cycle_thread(config.FOLLOWUP_DAYS):
             st.rerun()
 
-    # Plain text status instead of st.progress (no animated fill)
+    # Plain text status (no st.progress — its fill is CSS-animated).
     if running:
         st.info(f"🔄 Cycle {prog['cycle']} running · {prog['pending_approval']} of "
-                f"{max(prog['at_risk'], prog['pending_approval'])} drafts ready so far.\n\n"
-                f"Open the **Approval queue** tab and press **🔄 Refresh drafts** to pull new ones.")
+                f"{max(prog['at_risk'], prog['pending_approval'])} drafts ready so far")
     elif "cycle_error" in st.session_state:
         st.error(st.session_state["cycle_error"])
 
@@ -149,6 +162,10 @@ pending = [i for i in ivs if i["status"] == "pending_approval"]
 
 tabs = st.tabs([f"📡 Risk radar", f"✅ Approval queue ({len(pending)})", "🔍 Learner", "📈 Outcomes", "🧠 Agent trace",
                 "🧪 Evaluation", "✉️ Outbox"])
+
+# ── auto-refresh while a cycle runs (no fade thanks to the CSS above) ──────────────
+if _cycle_running():
+    st_autorefresh(interval=1500, key="cycle-poll")
 
 # ------------------------------------------------------------------ risk radar
 with tabs[0]:
@@ -180,21 +197,13 @@ with tabs[0]:
 # ------------------------------------------------------------------ approval queue
 with tabs[1]:
     st.subheader("Human approval checkpoint")
-    st.caption("Nothing is sent until a named reviewer approves. Drafts are written to memory as soon as the LLM "
-               "finishes each learner — press **🔄 Refresh drafts** to pick up new ones mid-cycle.")
-
-    left, right = st.columns([1, 3])
-    if left.button("🔄 Refresh drafts", width="stretch"):
-        st.rerun()
-    if _cycle_running():
-        right.caption(f"Cycle {agent.progress()['cycle']} still running. New drafts appear here when you refresh.")
-    elif not pending:
-        right.caption("No drafts waiting.")
+    st.caption("Nothing is sent until a named reviewer approves. Drafts stream in automatically as soon as the "
+               "LLM finishes each learner — approve one while the rest are still being written.")
 
     pending = sorted(pending, key=lambda i: i["id"], reverse=True)  # newest first
     if not pending:
         if _cycle_running():
-            st.info("Drafting in progress… press **🔄 Refresh drafts** to pull new ones.")
+            st.info("Drafting in progress… drafts will appear here one by one.")
         else:
             st.success("Queue is empty.")
 
